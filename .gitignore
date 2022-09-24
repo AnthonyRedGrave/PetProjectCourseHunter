@@ -1,0 +1,10 @@
+.idea
+idea
+.DS_Store
+
+*.egg-info/
+.installed.cfg
+*.egg
+
+venv/
+data
