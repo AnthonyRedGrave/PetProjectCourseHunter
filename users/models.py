@@ -1,14 +1,30 @@
-from sqlmodel import Field, SQLModel
+from sqlalchemy import Column, ForeignKey, Integer, String, Enum, Text
+from sqlalchemy.orm import relationship, backref
+from db import Base
+from sqlalchemy_utils.types import ChoiceType
 
 
-class UserBase(SQLModel):
-    email: str
-    username: str
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(100), unique=True, index=True, nullable=False)
+    username = Column(String(100), unique=True, nullable=False)
+    firstname = Column(String(100), nullable=False)
+    lastname = Column(String(100), nullable=False)
+    hashed_password = Column(String(100), nullable=False)
+    account = relationship("Account", back_populates="user", uselist=False)
 
 
-class User(UserBase, table=True):
-    id: int = Field(default=None, primary_key=True)
+class Account(Base):
+    TYPES = [
+        ('admin', 'Admin account'),
+        ('standart', 'Standart account'),
+        ('premium', 'Premium account')
+    ]
+    __tablename__ = "profiles"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User", backref=backref("profiles", uselist=False))
+    type = Column(ChoiceType(TYPES))
+    #courses
 
-
-class UserRegister(UserBase):
-    pass
