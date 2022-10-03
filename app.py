@@ -16,4 +16,4 @@ origins = [
 
 @app.get("/")
 async def main():
-    return 123
+    return {"detail": "HELLO"}
