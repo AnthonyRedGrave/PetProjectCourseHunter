@@ -18,13 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# CORSHEADERS FOR FRONTEND
-origins = [
-
-]
-
-
 @app.get("/")
 async def main():
     return {"detail": "HELLO"}
