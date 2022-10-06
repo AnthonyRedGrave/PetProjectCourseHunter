@@ -3,6 +3,7 @@ from passlib.context import CryptContext
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from decouple import config
+from .models import User
 
 from typing import Optional, Dict
 
@@ -17,7 +18,7 @@ JWT_ALGORITHM = config("algorithm")
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
 
 
-def token_response(token: str)->dict:
+def token_response(token: str) -> dict:
     return{
         "accessToken": token
         # refresh_token
@@ -32,11 +33,11 @@ def verify_password(password: str, hash: str) -> str:
     return pwd_context.verify(password, hash)
 
 
-def sign_jwt(user_email: str, user_account_type: str)-> Dict[str, str]:
+def sign_jwt(user: User) -> Dict[str, str]:
     payload = {
-        "user_email": user_email,
+        "user_email": user.email,
         "expires": time.time() + 6000,
-        "user_account_type": user_account_type
+        "user_account_type": user.account.type.code
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -63,6 +64,7 @@ class JWTBearer(HTTPBearer):
 
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
+        print(credentials)
         if credentials:
             if not credentials.scheme == "Bearer":
                 raise HTTPException(status_code=403, detail="Invalid auth scheme!")

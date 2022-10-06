@@ -1,17 +1,25 @@
 from fastapi import FastAPI
 
-from users.models import User
 from users.views import users_router
-# from db import init_db
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
-app.include_router(users_router, prefix='/api', tags=['users'])
+origins = ["*"]
 
 
-# CORSHEADERS FOR FRONTEND
-origins = [
+def get_application() -> FastAPI:
+    application = FastAPI()
+    application.include_router(users_router, prefix='/api', tags=['users'])
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    return application
 
-]
+
+app = get_application()
 
 
 @app.get("/")
