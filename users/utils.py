@@ -153,7 +153,7 @@ async def check_user(db: AsyncSession, data: UserLogin):
     if not verify_password(data.password, user.hashed_password):
         return {"error": "Wrong password!"}
 
-    response = sign_jwt(user=user, user_account_type=user.account.type.code)
+    response = sign_jwt(user=user)
 
     return response, user
 
