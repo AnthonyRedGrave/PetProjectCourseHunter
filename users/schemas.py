@@ -5,21 +5,26 @@ from enum import Enum
 from .models import User as UserDB
 
 
+class AccountTypeChoices(str, Enum):
+    standart = "standart"
+    premium = "premium"
+    admin = "admin"
+
+
 class Account(BaseModel):
-    type: str
+    type: AccountTypeChoices = AccountTypeChoices.standart
+
+    class Config:
+        orm_mode = True
 
 
 class User(BaseModel):
     id: int
     username: str
+    email: str
     firstname: str
     lastname: str
-    account_type: Optional[str] = None
-
-    def __init__(self, user_db: UserDB, **kwargs):
-        user_data = user_db.__dict__
-        user_account = user_data.pop("account")
-        super().__init__(account_type=user_account.type.code, **user_data)
+    account: Optional[Account]
 
     class Config:
         orm_mode = True
@@ -34,20 +39,6 @@ class UserPost(BaseModel):
 
 class UserRegister(UserPost):
     password: constr(min_length=8)
-    password2: str
-
-    @validator("password2")
-    def passwords_match(cls, v, values, **kwargs):
-        if 'password' in values and v != values['password']:
-            # raise ValidationError("passwords are not similar!")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords are not similar!")
-        return v
-
-
-class AccountTypeChoices(str, Enum):
-    standart = "standart"
-    premium = "premium"
-    admin = "admin"
 
 
 class UserRegisterAccountType(UserRegister):
