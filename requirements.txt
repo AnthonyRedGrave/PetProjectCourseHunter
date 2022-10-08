@@ -36,6 +36,7 @@ PyYAML==6.0
 rsa==4.8
 six==1.16.0
 sniffio==1.2.0
+sqladmin
 SQLAlchemy==1.4.38
 sqlalchemy2-stubs==0.0.2a27
 sqlalchemy-utils

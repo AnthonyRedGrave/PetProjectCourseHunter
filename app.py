@@ -3,8 +3,16 @@ from fastapi import FastAPI
 from users.views import users_router
 from fastapi.middleware.cors import CORSMiddleware
 from db import engine, Base
+from users.models import User
+
+from sqladmin import Admin, ModelView
 
 origins = ["*"]
+
+class UserAdmin(ModelView, model = User):
+    column_list = [User.id, User.username]
+    details_template = "details.html"
+    list_template = "list.html"
 
 
 def get_application() -> FastAPI:
@@ -21,6 +29,9 @@ def get_application() -> FastAPI:
 
 
 app = get_application()
+
+admin = Admin(app, engine, templates_dir="templates")
+admin.add_view(UserAdmin)
 
 
 @app.on_event("startup")
