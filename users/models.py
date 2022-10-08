@@ -27,4 +27,3 @@ class Account(Base):
     user = relationship("User", backref=backref("profiles", uselist=False))
     type = Column(ChoiceType(TYPES))
     #courses
-

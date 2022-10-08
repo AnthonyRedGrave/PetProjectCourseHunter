@@ -34,27 +34,42 @@ def verify_password(password: str, hash: str) -> str:
 
 
 def sign_jwt(user: User) -> Dict[str, str]:
+
+    try:
+        user_account = user.account.type.code
+    except AttributeError:
+        user_account = user.account.type
+
     payload = {
         "user_email": user.email,
         "expires": time.time() + 6000,
-        "user_account_type": user.account.type
+        "user_account_type": user_account
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
     return token_response(token)
 
 
-def decode_jwt(jwt_token: str, permission_type: str):
+def check_permission(decoded_token, permission_type):
+    if decoded_token["user_account_type"] != permission_type:
+        return False, "Permission denied!"
+    else:
+        return True, decoded_token
+
+
+def decode_jwt(jwt_token: str, permission_type: str = None):
     try:
         decoded_token = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        if decoded_token["user_account_type"] != permission_type:
-            return False, "Permission denied!"
+
         if decoded_token["expires"] >= time.time():
+            if permission_type is not None:
+                return check_permission(decoded_token, permission_type)
             return True, decoded_token
         else:
             return False, "Token is expired!"
+
     except:
-        return True, {}
+        return False, "Invalid token!"
 
 
 class JWTBearer(HTTPBearer):
@@ -64,7 +79,7 @@ class JWTBearer(HTTPBearer):
 
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
-        print(credentials)
+        print(request.__dict__)
         if credentials:
             if not credentials.scheme == "Bearer":
                 raise HTTPException(status_code=403, detail="Invalid auth scheme!")

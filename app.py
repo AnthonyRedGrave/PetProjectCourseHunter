@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from users.views import users_router
 from fastapi.middleware.cors import CORSMiddleware
 from db import engine, Base
-# from db import init_db
 
 origins = ["*"]
 

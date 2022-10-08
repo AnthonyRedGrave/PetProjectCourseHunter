@@ -148,20 +148,30 @@ async def check_user(db: AsyncSession, data: UserLogin):
     )
     user = result.scalars().first()
     if user is None:
-        return {"error": "User with this email does not exist!"}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this email does not exist!")
 
     if not verify_password(data.password, user.hashed_password):
-        return {"error": "Wrong password!"}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong password!")
 
-    response = sign_jwt(user=user)
+    response = sign_jwt(user)
 
     return response, user
 
 
-# async def get_current_user(request: Request):
-#     credentials: HTTPAuthorizationCredentials = await HTTPBearer().__call__(request)
-#     payload = decode_jwt(credentials.credentials)
-#     if payload is None:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Auth error!")
-#
-#     return 123
+async def get_current_user(request: Request, db: AsyncSession = Depends(async_get_db)):
+    credentials: HTTPAuthorizationCredentials = await HTTPBearer().__call__(request)
+    status_bool, detail = decode_jwt(credentials.credentials)
+    if not status_bool:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
+
+    result = await db.execute(
+        select(User)
+        .filter_by(email=detail['user_email'])
+        .options(selectinload(User.account))
+    )
+    user = result.scalars().first()
+
+    if user is None:
+        raise HTTPException(status_code=400, detail="User with this email does not exists!")
+
+    return user
