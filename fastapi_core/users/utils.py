@@ -8,17 +8,17 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from typing import Type, Callable
 
-from db import async_get_db
+from fastapi_core.db import async_get_db
 
 from fastapi import Depends, Request, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, HTTPAuthorizationCredentials, HTTPBearer
 
-from repositories import BaseRepository
+from fastapi_core.repositories import BaseRepository
 
-from users.models import User, Account
-from users.schemas import UserLogin
-from users.schemas import User as UserBase
-from users.security import hash_password, verify_password, sign_jwt, decode_jwt
+from .models import User, Account
+from .schemas import UserLogin
+from .schemas import User as UserBase
+from .security import hash_password, verify_password, sign_jwt, decode_jwt
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")

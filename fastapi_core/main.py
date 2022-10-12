@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 
-from users.views import users_router
+from .users.views import users_router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.wsgi import WSGIMiddleware
-from db import engine
-from users.models import Base
+from .db import engine
+from .users.models import Base
 
 
 origins = ["*"]
