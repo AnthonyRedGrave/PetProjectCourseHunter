@@ -2,17 +2,12 @@ from fastapi import FastAPI
 
 from users.views import users_router
 from fastapi.middleware.cors import CORSMiddleware
-from db import engine, Base
-from users.models import User
+from fastapi.middleware.wsgi import WSGIMiddleware
+from db import engine
+from users.models import Base
 
-from sqladmin import Admin, ModelView
 
 origins = ["*"]
-
-class UserAdmin(ModelView, model = User):
-    column_list = [User.id, User.username]
-    details_template = "details.html"
-    list_template = "list.html"
 
 
 def get_application() -> FastAPI:
@@ -30,8 +25,10 @@ def get_application() -> FastAPI:
 
 app = get_application()
 
-admin = Admin(app, engine, templates_dir="templates")
-admin.add_view(UserAdmin)
+# @flask_app.route("/")
+# def flask_admin():
+#     return {"HELLO": "FLASK"}
+
 
 
 @app.on_event("startup")

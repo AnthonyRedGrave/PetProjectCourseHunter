@@ -17,8 +17,6 @@ users_router = APIRouter()
                   response_model=List[User])
 async def get_users(admin_repo = Depends(get_repository(AdminAPIRepository))) -> List[User]:
     users = await admin_repo.async_get_users()
-    for user in users:
-        print(user.account)
     return users
 
 
