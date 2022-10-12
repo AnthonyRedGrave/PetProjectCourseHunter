@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response
 from starlette.responses import JSONResponse
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from db import async_get_db
+from fastapi_core.db import async_get_db
 from .utils import AdminAPIRepository, get_current_user, get_repository, check_user, create_admin_user
 from .schemas import UserRegister, UserLogin, User, UserRegisterAccountType, UserUpdate
 from .security import JWTBearer, sign_jwt
