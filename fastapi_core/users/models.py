@@ -1,7 +1,10 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Enum, Text
 from sqlalchemy.orm import relationship, backref
-from db import Base
 from sqlalchemy_utils.types import ChoiceType
+from sqlalchemy.ext.declarative import declarative_base
+
+
+Base = declarative_base()
 
 
 class User(Base):

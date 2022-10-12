@@ -2,7 +2,10 @@ from fastapi import FastAPI
 
 from users.views import users_router
 from fastapi.middleware.cors import CORSMiddleware
-from db import engine, Base
+from fastapi.middleware.wsgi import WSGIMiddleware
+from db import engine
+from users.models import Base
+
 
 origins = ["*"]
 
@@ -21,6 +24,11 @@ def get_application() -> FastAPI:
 
 
 app = get_application()
+
+# @flask_app.route("/")
+# def flask_admin():
+#     return {"HELLO": "FLASK"}
+
 
 
 @app.on_event("startup")

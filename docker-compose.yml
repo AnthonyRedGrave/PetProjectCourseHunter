@@ -3,9 +3,11 @@ version: '3.8'
 services:
   web:
     build: .
-    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app:app --host 0.0.0.0 --reload'
     volumes:
-      - .:/app
+       - ./fastapi_core:/code/fastapi_core/
+    # command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn fastapi_core.app:app --host 0.0.0.0 --reload'
+    command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn fastapi_core.main:app --host 0.0.0.0 --reload'
+
     ports:
       - 8008:8000
     environment:
@@ -22,6 +24,21 @@ services:
       - POSTGRES_USER=CourseHunter
       - POSTGRES_PASSWORD=CourseHunter
       - POSTGRES_DB=CourseHunter
+  
+  admin:
+    build: .
+    volumes:
+      - ./admin:/code/admin/
+    # command: "python3 -m flask run --host=0.0.0.0 --reload"
+    command: "python3 -m admin.app"
+    # environment:
+    #   - SYNC_DATABASE_URL=postgresql://CourseHunter:CourseHunter@db:5432/CourseHunter
+    ports:
+      - "5000:5000"
+    # restart: on-failure
+    depends_on:
+      - web
 
 volumes:
   postgres_data:
+  
