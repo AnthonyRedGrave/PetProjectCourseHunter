@@ -2,49 +2,58 @@ from flask_admin.contrib.sqla import ModelView
 
 from sqlalchemy import func
 
+# from wtforms import StringField
+from wtforms.widgets import TextArea
+from wtforms.fields import StringField
+
 from fastapi_core.users.models import User, Account
+from fastapi_core.courses.models import Category, Course
 
 from fastapi_core.users.security import hash_password
 
-# async def async_get_users(self):
-#         query = select(User).options(selectinload(User.account))
-#         result = await self.db.execute(query)
-#         return result.scalars().all()
+
+class MyCourseAdmin(ModelView):
+  pass
+
+
+class MyToolAdmin(ModelView):
+  form_columns = ('title',)
+  column_exclude_list = ('course')
+
+
+class MyCategoryAdmin(ModelView):
+  form_columns = ('title', 'description')
+
 
 class MyUserAdmin(ModelView):
   column_exclude_list = ('hashed_password',)
-  form_columns = ('username', 'firstname', 'lastname', 'email', 'hashed_password',)
+  form_columns = ('username', 'firstname', 'lastname', 'email', 'hashed_password')
 
   form_args = {
     'hashed_password': {
         'label': 'Password'
     }
-}
+  } 
+
+  # form_overrides = {
+  #   'account': StringField
+  # }
+
+  def scaffold_form(self):
+        form_class = super(MyUserAdmin, self).scaffold_form()
+        form_class.account_type = StringField('Account type')
+        return form_class
   
   def create_model(self, form):
-    form_fields = form.__dict__['_fields']
-    user = User(username=form_fields.username,
-                email=form_fields.email,
-                hashed_password=hash_password(form_fields.password),
-                firstname=form_fields.firstname,
-                lastname=form_fields.lastname
+    user = User(username=form.username.data,
+                email=form.email.data,
+                hashed_password=hash_password(form.hashed_password.data),
+                firstname=form.firstname.data,
+                lastname=form.lastname.data
     )
             
-    # account_type = user_in.__dict__.get('account_type', "standart")
-    db_user_account = Account(type="standart", user_id=user.id)
+    db_user_account = Account(type=form.account_type.data, user_id=user.id)
     db_user_account.user = user
-    self.db.add_all([user, db_user_account])
-    # self.session.add(model)
+    self.session.add_all([user, db_user_account])
     self.session.commit()
-    # return super().create_model(form)
-    return []
-
-
-
-  # async def get_query(self):
-  #       print(self.session.query(self.model))
-  #       return self.session.query(self.model)
-
-  # async def get_count_query(self):
-  #       print(self.session.query(func.count('*')).select_from(self.model))
-  #       return self.session.query(func.count('*')).select_from(self.model)
+    return user

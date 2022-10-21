@@ -1,33 +1,24 @@
-import asyncpg
-from psycopg2 import IntegrityError
 import sqlalchemy.exc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import SQLAlchemyError
 
-from typing import Type, Callable
-
 from fastapi_core.db import async_get_db
 
 from fastapi import Depends, Request, HTTPException, status, Response
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer, HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import OAuth2PasswordBearer, HTTPAuthorizationCredentials, HTTPBearer
 
 from fastapi_core.repositories import BaseRepository
 
 from .models import User, Account
 from .schemas import UserLogin
-from .schemas import User as UserBase
 from .security import hash_password, verify_password, sign_jwt, decode_jwt
+
+from fastapi_core.settings import HOST_NAME
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/token")
-
-
-def get_repository(Repo_type: Type[BaseRepository]) -> Callable:
-    def get_repo(db=Depends(async_get_db)):
-        return Repo_type(db)
-    return get_repo
 
 
 class AdminAPIRepository(BaseRepository):
@@ -52,9 +43,6 @@ class AdminAPIRepository(BaseRepository):
         try:
             for col in user_data:
                 if col[1] is not None:
-                    if col[0] == 'account_type':
-                        user.account.type = col[1]
-                        continue
                     setattr(user, col[0], col[1])
                     await self.db.commit()
         except sqlalchemy.exc.IntegrityError:
@@ -95,7 +83,7 @@ class AdminAPIRepository(BaseRepository):
                 
                 user = result.scalars().first()
                 return user
-            except SQLAlchemyError:
+            except SQLAlchemyError as e:
                 await self.db.rollback()
                 raise HTTPException(status_code=400, detail="User with this username already exists!")
             
@@ -159,6 +147,7 @@ async def check_user(db: AsyncSession, data: UserLogin):
 
 
 async def get_current_user(request: Request, db: AsyncSession = Depends(async_get_db)):
+
     credentials: HTTPAuthorizationCredentials = await HTTPBearer().__call__(request)
     status_bool, detail = decode_jwt(credentials.credentials)
     if not status_bool:
@@ -175,3 +164,19 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(async_ge
         raise HTTPException(status_code=400, detail="User with this email does not exists!")
 
     return user
+
+
+async def update_current_user(db, current_user, user_data):
+    try:
+        for col in user_data:
+            if col[1] is not None:
+                setattr(current_user, col[0], col[1])
+                await db.commit()
+    except sqlalchemy.exc.IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="Duplicated values!")
+
+
+async def user_change_password(current_user, user_data):
+    current_user.hashed_password = hash_password(user_data.password)
+

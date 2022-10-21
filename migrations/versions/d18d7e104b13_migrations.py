@@ -1,8 +1,8 @@
-"""relationship user and account moded
+"""migrations
 
-Revision ID: 224918edb868
-Revises: 60e9882cbb21
-Create Date: 2022-09-28 12:57:03.216276
+Revision ID: d18d7e104b13
+Revises: 
+Create Date: 2022-10-19 18:49:12.592670
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '224918edb868'
-down_revision = '60e9882cbb21'
+revision = 'd18d7e104b13'
+down_revision = None
 branch_labels = None
 depends_on = None
 

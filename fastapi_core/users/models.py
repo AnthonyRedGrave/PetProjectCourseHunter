@@ -1,10 +1,12 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Enum, Text
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy_utils.types import ChoiceType
-from sqlalchemy.ext.declarative import declarative_base
+from fastapi_core.base import Base
+from fastapi_core.settings import HOST_NAME
 
 
-Base = declarative_base()
+from fastapi_core.courses.models import Course
+# TODO: прикрутить комменты
 
 
 class User(Base):
@@ -16,6 +18,14 @@ class User(Base):
     lastname = Column(String(100), nullable=False)
     hashed_password = Column(String(100), nullable=False)
     account = relationship("Account", back_populates="user", uselist=False)
+
+    # published_courses = relationship("Course", lazy='selectin', backref=backref("publisher", uselist=True))
+    published_courses = relationship("Course", back_populates="publisher",lazy='subquery', uselist=True)
+
+    image = Column(String(300), default=f'{HOST_NAME}users/default_avatar.png')
+
+    def __repr__(self):
+        return "<%s id=%s>" % (self.username, self.id)
 
 
 class Account(Base):

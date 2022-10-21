@@ -4,10 +4,8 @@ services:
   web:
     build: .
     volumes:
-       - ./fastapi_core:/code/fastapi_core/
-    # command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn fastapi_core.app:app --host 0.0.0.0 --reload'
+      - .:/code
     command: bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn fastapi_core.main:app --host 0.0.0.0 --reload'
-
     ports:
       - 8008:8000
     environment:
@@ -28,14 +26,10 @@ services:
   admin:
     build: .
     volumes:
-      - ./admin:/code/admin/
-    # command: "python3 -m flask run --host=0.0.0.0 --reload"
+      - .:/code
     command: "python3 -m admin.app"
-    # environment:
-    #   - SYNC_DATABASE_URL=postgresql://CourseHunter:CourseHunter@db:5432/CourseHunter
     ports:
       - "5000:5000"
-    # restart: on-failure
     depends_on:
       - web
 

@@ -1,18 +1,28 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
-from .users.views import users_router
+from fastapi_core.users.views import users_router
+from fastapi_core.courses.views import courses_router
+from fastapi_core.users.admin_views import admin_router
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.wsgi import WSGIMiddleware
-from .db import engine
-from .users.models import Base
+from fastapi_core.db import engine
+from fastapi_core.base import Base
+import os
 
+
+# script_dir = os.path.dirname(__file__)
+# st_abs_file_path = os.path.join(script_dir, "media/")
 
 origins = ["*"]
+
 
 
 def get_application() -> FastAPI:
     application = FastAPI()
     application.include_router(users_router, prefix='/api', tags=['users'])
+    application.include_router(courses_router, prefix='/api', tags=['courses'])
+    application.include_router(admin_router)
+    application.mount("/media", StaticFiles(directory="media/"), name="media")
     application.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
@@ -24,11 +34,6 @@ def get_application() -> FastAPI:
 
 
 app = get_application()
-
-# @flask_app.route("/")
-# def flask_admin():
-#     return {"HELLO": "FLASK"}
-
 
 
 @app.on_event("startup")

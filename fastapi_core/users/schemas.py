@@ -1,5 +1,5 @@
 from pydantic import BaseModel, validator, ValidationError, constr
-from typing import Optional
+from typing import List, Optional
 from fastapi import HTTPException, status
 from enum import Enum
 from .models import User as UserDB
@@ -18,6 +18,14 @@ class Account(BaseModel):
         orm_mode = True
 
 
+class PublishedCourse(BaseModel):
+    id: int
+    title: str
+
+    class Config:
+        orm_mode = True
+
+
 class User(BaseModel):
     id: int
     username: str
@@ -25,6 +33,8 @@ class User(BaseModel):
     firstname: str
     lastname: str
     account: Optional[Account]
+    image: str
+    published_courses: List[PublishedCourse]
 
     class Config:
         orm_mode = True
@@ -50,9 +60,19 @@ class UserUpdate(UserPost):
     firstname: Optional[str] = None
     lastname: Optional[str] = None
     email: Optional[str] = None
-    account_type: AccountTypeChoices = AccountTypeChoices.standart
 
 
 class UserLogin(BaseModel):
     email: str
     password: constr(min_length=8)
+
+
+class UserChangePassword(BaseModel):
+    password: str
+    repeat_password: str
+
+    @validator("repeat_password")
+    def passwords_match(cls, v, values, **kwargs):
+        if 'password' in values and v != values['password']:
+            raise HTTPException(status_code=403, detail="passwords are not similar!")
+        return v

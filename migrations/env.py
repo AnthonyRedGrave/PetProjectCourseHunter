@@ -7,8 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from alembic import context
 
-from db import Base
-from users.models import User, Account
+from fastapi_core.base import Base
+from fastapi_core.users.models import User, Account
+from fastapi_core.courses.models import Course, Category
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -55,7 +57,7 @@ def run_migrations_offline():
 
 
 def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
 
     with context.begin_transaction():
         context.run_migrations()

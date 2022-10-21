@@ -26,6 +26,7 @@ def token_response(token: str) -> dict:
 
 
 def hash_password(password: str) -> str:
+    print(password)
     return pwd_context.hash(password)
 
 
@@ -51,7 +52,16 @@ def sign_jwt(user: User) -> Dict[str, str]:
 
 
 def check_permission(decoded_token, permission_type):
-    if decoded_token["user_account_type"] != permission_type:
+    # TODO: если заходит админ, а у раута пермишн стандарт, админ может заходить!
+    
+    permission_types = {
+        "standart": 1,
+        "premium": 2,
+        "admin": 3
+    }
+    if permission_types[decoded_token["user_account_type"]] < permission_types[permission_type]:
+        print(permission_types[decoded_token["user_account_type"]])
+        print(permission_types[permission_type])
         return False, "Permission denied!"
     else:
         return True, decoded_token
@@ -60,7 +70,6 @@ def check_permission(decoded_token, permission_type):
 def decode_jwt(jwt_token: str, permission_type: str = None):
     try:
         decoded_token = jwt.decode(jwt_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-
         if decoded_token["expires"] >= time.time():
             if permission_type is not None:
                 return check_permission(decoded_token, permission_type)
@@ -79,7 +88,6 @@ class JWTBearer(HTTPBearer):
 
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
-        print(request.__dict__)
         if credentials:
             if not credentials.scheme == "Bearer":
                 raise HTTPException(status_code=403, detail="Invalid auth scheme!")

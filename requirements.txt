@@ -1,4 +1,5 @@
 ﻿alembic==1.8.1
+aiofiles
 anyio==3.6.1
 asyncpg==0.26.0
 bcrypt==3.2.2
@@ -17,6 +18,7 @@ FastAPI-SQLAlchemy==0.2.1
 flask
 flask-sqlalchemy
 flask-admin
+Flask-BasicAuth
 
 greenlet==1.1.3
 gunicorn
@@ -37,11 +39,13 @@ pyjwt[crypto]
 python-decouple==3.6
 python-dotenv==0.20.0
 python-jose==3.3.0
+python-multipart
 PyYAML==6.0
 rsa==4.8
 six==1.16.0
 sniffio==1.2.0
 SQLAlchemy==1.4.38
+sqlalchemy-media
 sqlalchemy2-stubs==0.0.2a27
 sqlalchemy-utils
 sqlmodel==0.0.4
@@ -51,4 +55,5 @@ typing_extensions==4.3.0
 uvicorn==0.13.4
 uvloop
 watchfiles==0.15.0
+Wand
 websockets==10.3
