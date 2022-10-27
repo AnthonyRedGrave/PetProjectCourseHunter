@@ -51,7 +51,7 @@ class Course(BaseModel):
     rating: Optional[str] = None
     study_hours: Optional[str] = None
 
-    logo: str
+    preview: str
 
     publisher__username: str = None
 
@@ -79,6 +79,7 @@ class CategoryCreate(BaseModel):
 
 class Category(CategoryCreate):
     id: int
+    logo: str
 
     class Config:
         orm_mode = True
