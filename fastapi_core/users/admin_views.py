@@ -58,7 +58,7 @@ async def delete_user(user_id: str,
 
 
 
-@admin_router.post("/", status_code=201, dependencies=[Depends(JWTBearer(permission_type='admin'))])
+@admin_router.post("/", status_code=201)
 async def create_admin(db: AsyncSession = Depends(async_get_db)):
     response = await create_admin_user(db=db)
     return response
