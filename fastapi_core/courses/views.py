@@ -34,7 +34,7 @@ async def get_courses(rating: str = None,
     return courses
 
 
-@courses_router.post("/courses", response_model=Course, dependencies=[Depends(JWTBearer())])
+@courses_router.post("/courses", response_model=Course)
 async def post_course(course_in: CourseCreate, course_repo = Depends(get_repository(CourseAPIRepository)), current_user = Depends(get_current_user)) -> Course:
     course = await course_repo.async_create_course(course_data = course_in, current_user=current_user)
     return course
@@ -44,18 +44,6 @@ async def post_course(course_in: CourseCreate, course_repo = Depends(get_reposit
 async def get_course(course_id: int, course_repo = Depends(get_repository(CourseAPIRepository))) -> Course:
     course = await course_repo.async_get_course(course_id = course_id)
     return course
-
-
-def checker(data: str = Form(...)):
-    try:
-        model = CourseUpdate.parse_raw(data)
-    except ValidationError as e:
-        raise HTTPException(
-            detail=jsonable_encoder(e.errors()),
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        )
-
-    return model
 
 
 @courses_router.patch("/courses/{course_id}/", response_model=Course)

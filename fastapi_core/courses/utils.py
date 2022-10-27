@@ -1,6 +1,5 @@
 from typing import IO, Generator
 from fastapi import HTTPException
-from sqlalchemy import subquery
 from sqlalchemy.future import select
 import sqlalchemy.exc
 from sqlalchemy.exc import SQLAlchemyError
