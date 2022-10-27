@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+from ormar import Boolean
+from pydantic import BaseModel, Field, validator
 from enum import Enum
 
 from typing import List, Optional
@@ -42,7 +43,7 @@ class Publisher(BaseModel):
 
 
 class Course(BaseModel):
-    # id: int
+    id: int
     title: str
     description: str
     difficult: DifficultTypeChoices = DifficultTypeChoices.easy
@@ -50,17 +51,21 @@ class Course(BaseModel):
     rating: Optional[str] = None
     study_hours: Optional[str] = None
 
+    logo: str
+
     publisher__username: str = None
 
     tools: List[Tool]
 
     category_title: str = None
 
-    draft: bool = None
-
     video: str = None
 
     course_lessons: List[CourseLesson]
+
+    @validator("tools")
+    def get_tools_titles(cls, v, values):
+        return [tool.title for tool in v]  
 
     class Config:
         orm_mode = True
@@ -87,6 +92,17 @@ class CourseCreate(BaseModel):
     
     tools: List[str]
 
-    category_title: str
+    category: str
     
 
+class CourseUpdate(BaseModel):
+    title:  Optional[str] = None
+    description:  Optional[str] = None
+
+    difficult: Optional[DifficultTypeChoices] = None
+    
+    tools:  Optional[List[str]] = None
+
+    category:  Optional[str] = None
+
+    

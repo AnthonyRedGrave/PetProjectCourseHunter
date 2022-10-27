@@ -21,6 +21,9 @@ class Account(BaseModel):
 class PublishedCourse(BaseModel):
     id: int
     title: str
+    description: str
+    rating: Optional[str] = None
+    study_hours: Optional[str] = None
 
     class Config:
         orm_mode = True

@@ -5,7 +5,7 @@ from fastapi_core.base import Base
 from fastapi_core.settings import HOST_NAME
 
 
-from fastapi_core.courses.models import Course
+from fastapi_core.courses.models import Course, CourseFavorite
 # TODO: прикрутить комменты
 
 
@@ -19,8 +19,10 @@ class User(Base):
     hashed_password = Column(String(100), nullable=False)
     account = relationship("Account", back_populates="user", uselist=False)
 
-    # published_courses = relationship("Course", lazy='selectin', backref=backref("publisher", uselist=True))
+
     published_courses = relationship("Course", back_populates="publisher",lazy='subquery', uselist=True)
+
+    favorites = relationship("CourseFavorite", back_populates="user", lazy='subquery', uselist=True)
 
     image = Column(String(300), default=f'{HOST_NAME}users/default_avatar.png')
 

@@ -6,8 +6,11 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Enum, Text, null, Table
 from sqlalchemy_utils.types import ChoiceType
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
+
 
 from fastapi_core.settings import HOST_NAME
+
 
 from .mixins import Timestamp
 
@@ -84,13 +87,14 @@ class Course(Timestamp, Base):
 
     course_lessons = relationship("Lesson", lazy='selectin', backref=backref("courses", uselist=True))
 
+    favorites = relationship("CourseFavorite", back_populates="course", lazy='subquery', uselist=True)
+
     category_id = Column(Integer, ForeignKey("categories.id"))
     category = relationship("Category", lazy='selectin', back_populates="courses", uselist=False)
 
     category_title = association_proxy(target_collection='category', attr='title')
 
     draft = Column(Boolean, default=True)
-
 
     def __repr__(self):
         return "<%s id=%s>" % (self.title, self.id)
@@ -132,7 +136,20 @@ class Lesson(Base):
     course_id = Column(Integer, ForeignKey("courses.id"))
     course = relationship("Course", backref=backref("lessons", uselist=False))
 
-    
+
+
+class CourseFavorite(Base):
+    __tablename__ = "course_favorites"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    course_id = Column(Integer, ForeignKey("courses.id"))
+    course = relationship("Course", lazy='selectin', back_populates="favorites", uselist=False)
+
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User", lazy='selectin', back_populates="favorites", uselist=False)
+
+    active = Column(Boolean, default=True)
 
     # TODO:
     # comments = 

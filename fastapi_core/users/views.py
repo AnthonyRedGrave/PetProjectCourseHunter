@@ -1,8 +1,6 @@
 import os
-from pathlib import Path
-import shutil
 import aiofiles
-from fastapi import APIRouter, Depends, File,Response, UploadFile
+from fastapi import APIRouter, Depends, File, Response, UploadFile
 
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -14,7 +12,8 @@ from fastapi_core.users.schemas import UserRegister, UserLogin, User, UserUpdate
 from fastapi_core.users.security import sign_jwt
 from fastapi_core.users.utils import set_cookies_data, user_change_password
 from fastapi_core.users.responses import LoginResponse
-from fastapi_core.settings import HOST_NAME
+from fastapi_core.settings import HOST_NAME, MEDIA_PATH
+from fastapi_core.utils import upload_file
 
 
 
@@ -63,12 +62,12 @@ async def change_password(user_change_password_data: UserChangePassword, current
 
 @users_router.post("/users/upload_image/",
                    response_model=User)
-async def upload_image(in_file: UploadFile=File(...), current_user = Depends(get_current_user)):
-    async with aiofiles.open(f"media/users/{in_file.filename}", 'wb') as out_file:
-        content = await in_file.read()  # async read
-        await out_file.write(content)  # async write
-    out_file_name = os.path.basename(f"media/users/{in_file.filename}")
-    current_user.image = f"{HOST_NAME}{out_file_name}"
+async def upload_image(image: UploadFile=File(...), current_user = Depends(get_current_user)):
+    
+    path = f"{MEDIA_PATH}/users/{current_user.id}"
+    out_image_name = await upload_file(path=path, filename=image.filename, in_file = image)
+    current_user.image = f"{HOST_NAME}users/{current_user.id}/{out_image_name}"
+
     return current_user
 
 

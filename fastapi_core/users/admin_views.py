@@ -14,12 +14,12 @@ from fastapi_core.users.responses import LoginResponse, DetailResponse
 
 
 admin_router = APIRouter(prefix="/admin",
-                         tags=['admin'],
-                         dependencies=[Depends(JWTBearer(permission_type='admin'))])
+                         tags=['admin'])
 
 
 @admin_router.get("/users/",
-                  response_model=List[User])
+                  response_model=List[User],
+                  dependencies=[Depends(JWTBearer(permission_type='admin'))])
 async def get_users(admin_repo = Depends(get_repository(AdminAPIRepository))) -> List[User]:
     users = await admin_repo.async_get_users()
     return users
@@ -27,7 +27,8 @@ async def get_users(admin_repo = Depends(get_repository(AdminAPIRepository))) ->
 
 @admin_router.post("/users/",
                    status_code=201,
-                   response_model=DetailResponse)
+                   response_model=DetailResponse,
+                   dependencies=[Depends(JWTBearer(permission_type='admin'))])
 async def create_user(user_in: UserRegisterAccountType,
                       admin_repo: AsyncSession = Depends(get_repository(AdminAPIRepository))):
     await admin_repo.async_create_user(user_in=user_in)
@@ -36,7 +37,8 @@ async def create_user(user_in: UserRegisterAccountType,
 
 @admin_router.patch("/{user_id}/",
                     response_model=User,
-                    status_code=200)
+                    status_code=200,
+                    dependencies=[Depends(JWTBearer(permission_type='admin'))])
 async def patch_user(user_id: str,
                      user_data: UserUpdate,
                      admin_repo = Depends(get_repository(AdminAPIRepository))):
@@ -46,7 +48,8 @@ async def patch_user(user_id: str,
 
 
 @admin_router.delete("/{user_id}/",
-                     response_model=DetailResponse)
+                     response_model=DetailResponse,
+                     dependencies=[Depends(JWTBearer(permission_type='admin'))])
 async def delete_user(user_id: str,
                       admin_repo = Depends(get_repository(AdminAPIRepository))):
     user = await admin_repo.get_user_by_id(user_id=user_id)
@@ -55,7 +58,7 @@ async def delete_user(user_id: str,
 
 
 
-@admin_router.post("/", status_code=201)
+@admin_router.post("/", status_code=201, dependencies=[Depends(JWTBearer(permission_type='admin'))])
 async def create_admin(db: AsyncSession = Depends(async_get_db)):
     response = await create_admin_user(db=db)
     return response
