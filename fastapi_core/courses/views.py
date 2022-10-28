@@ -81,7 +81,7 @@ async def upload_course_logo(course_id: int, file: Optional[UploadFile] = File(.
 
     path = f"{MEDIA_PATH}/courses/{course_id}"
     out_file_name = await upload_file(path=path, filename=file.filename, in_file = file)
-    course.video = f"{HOST_NAME}courses/{course_id}/{out_file_name}"
+    course.preview = f"{HOST_NAME}courses/{course_id}/{out_file_name}"
 
     return course
 
