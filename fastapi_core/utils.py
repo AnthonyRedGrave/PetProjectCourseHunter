@@ -107,5 +107,6 @@ async def load_fake_data(db: AsyncSession):
                 tools = tools[course_info[4][0]:course_info[4][1]]
         )
 
+        course.publisher = user
         db.add(course)
         await db.commit()
