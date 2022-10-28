@@ -120,7 +120,7 @@ class CourseAPIRepository(BaseRepository):
             )
 
             category = await self.get_category(
-                category_title=course_data.category_title
+                category_title=course_data.category
             )
 
             tools = await self.get_or_create_tools(tool_list=course_data.tools)
