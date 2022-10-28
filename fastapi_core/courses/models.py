@@ -75,7 +75,7 @@ class Course(Timestamp, Base):
     description = Column(Text, nullable=False)
     difficult = Column(ChoiceType(DIFFICULTES))
 
-    preview = Column(String(300), default=f"{HOST_NAME}courses/default_course_logo.png")
+    preview = Column(String(300), default=f"{HOST_NAME}courses/logo_default.png")
 
     video = Column(String(300))
 
