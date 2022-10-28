@@ -5,7 +5,6 @@ from fastapi_core.users.models import User
 from fastapi_core.courses.models import Course, Lesson
 
 
-
 # class AbstractComment(Base):
 #     __abstract__ = True
 #     id = Column(Integer, primary_key=True, index=True)
@@ -13,7 +12,6 @@ from fastapi_core.courses.models import Course, Lesson
 
 #     user_id = Column(Integer, ForeignKey("users.id"))
 #     user = relationship("User", backref=backref("comments", uselist=False))
-
 
 
 # class CourseComment(AbstractComment):

@@ -13,47 +13,44 @@ from fastapi_core.users.security import hash_password
 
 
 class MyCourseAdmin(ModelView):
-  pass
+    pass
 
 
 class MyToolAdmin(ModelView):
-  form_columns = ('title',)
-  column_exclude_list = ('course')
+    form_columns = ("title",)
+    column_exclude_list = "course"
 
 
 class MyCategoryAdmin(ModelView):
-  form_columns = ('title', 'description')
+    form_columns = ("title", "description")
 
 
 class MyUserAdmin(ModelView):
-  column_exclude_list = ('hashed_password',)
-  form_columns = ('username', 'firstname', 'lastname', 'email', 'hashed_password')
+    column_exclude_list = ("hashed_password",)
+    form_columns = ("username", "firstname", "lastname", "email", "hashed_password")
 
-  form_args = {
-    'hashed_password': {
-        'label': 'Password'
-    }
-  } 
+    form_args = {"hashed_password": {"label": "Password"}}
 
-  # form_overrides = {
-  #   'account': StringField
-  # }
+    # form_overrides = {
+    #   'account': StringField
+    # }
 
-  def scaffold_form(self):
+    def scaffold_form(self):
         form_class = super(MyUserAdmin, self).scaffold_form()
-        form_class.account_type = StringField('Account type')
+        form_class.account_type = StringField("Account type")
         return form_class
-  
-  def create_model(self, form):
-    user = User(username=form.username.data,
-                email=form.email.data,
-                hashed_password=hash_password(form.hashed_password.data),
-                firstname=form.firstname.data,
-                lastname=form.lastname.data
-    )
-            
-    db_user_account = Account(type=form.account_type.data, user_id=user.id)
-    db_user_account.user = user
-    self.session.add_all([user, db_user_account])
-    self.session.commit()
-    return user
+
+    def create_model(self, form):
+        user = User(
+            username=form.username.data,
+            email=form.email.data,
+            hashed_password=hash_password(form.hashed_password.data),
+            firstname=form.firstname.data,
+            lastname=form.lastname.data,
+        )
+
+        db_user_account = Account(type=form.account_type.data, user_id=user.id)
+        db_user_account.user = user
+        self.session.add_all([user, db_user_account])
+        self.session.commit()
+        return user

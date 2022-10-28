@@ -10,9 +10,11 @@ class DifficultTypeChoices(str, Enum):
     medium = "medium"
     hard = "hard"
 
+
 class LessonAttachment(BaseModel):
     id: int
     file: str
+
 
 class CourseLesson(BaseModel):
     id: int
@@ -29,7 +31,7 @@ class CourseLesson(BaseModel):
 class Tool(BaseModel):
     id: int
     title: str
-    
+
     class Config:
         orm_mode = True
 
@@ -65,7 +67,7 @@ class Course(BaseModel):
 
     @validator("tools")
     def get_tools_titles(cls, v, values):
-        return [tool.title for tool in v]  
+        return [tool.title for tool in v]
 
     class Config:
         orm_mode = True
@@ -90,20 +92,18 @@ class CourseCreate(BaseModel):
     description: str
 
     difficult: DifficultTypeChoices = DifficultTypeChoices.easy
-    
+
     tools: List[str]
 
     category: str
-    
+
 
 class CourseUpdate(BaseModel):
-    title:  Optional[str] = None
-    description:  Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
 
     difficult: Optional[DifficultTypeChoices] = None
-    
-    tools:  Optional[List[str]] = None
 
-    category:  Optional[str] = None
+    tools: Optional[List[str]] = None
 
-    
+    category: Optional[str] = None

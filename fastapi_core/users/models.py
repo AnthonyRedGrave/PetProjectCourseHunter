@@ -6,6 +6,7 @@ from fastapi_core.settings import HOST_NAME
 
 
 from fastapi_core.courses.models import Course, CourseFavorite
+
 # TODO: прикрутить комменты
 
 
@@ -19,12 +20,15 @@ class User(Base):
     hashed_password = Column(String(100), nullable=False)
     account = relationship("Account", back_populates="user", uselist=False)
 
+    published_courses = relationship(
+        "Course", back_populates="publisher", lazy="subquery", uselist=True
+    )
 
-    published_courses = relationship("Course", back_populates="publisher",lazy='subquery', uselist=True)
+    favorites = relationship(
+        "CourseFavorite", back_populates="user", lazy="subquery", uselist=True
+    )
 
-    favorites = relationship("CourseFavorite", back_populates="user", lazy='subquery', uselist=True)
-
-    image = Column(String(300), default=f'{HOST_NAME}users/default_avatar.png')
+    image = Column(String(300), default=f"{HOST_NAME}users/default_avatar.png")
 
     def __repr__(self):
         return "<%s id=%s>" % (self.username, self.id)
@@ -32,13 +36,13 @@ class User(Base):
 
 class Account(Base):
     TYPES = [
-        ('admin', 'Admin account'),
-        ('standart', 'Standart account'),
-        ('premium', 'Premium account')
+        ("admin", "Admin account"),
+        ("standart", "Standart account"),
+        ("premium", "Premium account"),
     ]
     __tablename__ = "profiles"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", backref=backref("profiles", uselist=False))
     type = Column(ChoiceType(TYPES))
-    #courses
+    # courses

@@ -76,6 +76,6 @@ class UserChangePassword(BaseModel):
 
     @validator("repeat_password")
     def passwords_match(cls, v, values, **kwargs):
-        if 'password' in values and v != values['password']:
+        if "password" in values and v != values["password"]:
             raise HTTPException(status_code=403, detail="passwords are not similar!")
         return v

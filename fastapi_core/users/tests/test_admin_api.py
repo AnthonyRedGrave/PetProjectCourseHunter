@@ -3,8 +3,6 @@ from users.schemas import UserRegister
 import json
 
 
-
-
 # тест создание админа
 # тест просмотр юзеров
 # тест редактирование юзера
@@ -22,23 +20,19 @@ pytestmark = pytest.mark.asyncio
 async def test_get_users__success(client):
 
     response = await client.post("/api/users/admin")
-    assert response.json() == {'detail': 'Created!'}
+    assert response.json() == {"detail": "Created!"}
 
-    user_data = {
-        "email": "admin@inbox.ru",
-        "password": "12345678"
-    }
+    user_data = {"email": "admin@inbox.ru", "password": "12345678"}
     response = await client.post("/api/users/login", data=json.dumps(user_data))
 
-    auth_data = {
-        "scheme": "Bearer",
-        "credentials": response.json()['accessToken']
-    }
+    auth_data = {"scheme": "Bearer", "credentials": response.json()["accessToken"]}
 
-    response = await client.get("/api/users/", headers={"Authorization": f"Bearer {response.json()['accessToken']}"})
+    response = await client.get(
+        "/api/users/",
+        headers={"Authorization": f"Bearer {response.json()['accessToken']}"},
+    )
     print(response.json())
     assert response.json() == []
-
 
 
 # async def test_get_users__error(client):

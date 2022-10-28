@@ -10,9 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = "postgresql+asyncpg://oluktutysqpgxp:a80e778388f93fbe96f8bbbbdd135fb510afc5053a65b2d2db914d7bb39f319b@ec2-99-81-16-126.eu-west-1.compute.amazonaws.com:5432/dchto2hd83c309"
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
-AsyncSessionLocal = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def async_get_db():

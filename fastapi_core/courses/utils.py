@@ -13,8 +13,9 @@ import aiofiles
 
 
 async def async_create_category(db, category_data):
-    category = Category(title = category_data.title,
-                        description = category_data.description)
+    category = Category(
+        title=category_data.title, description=category_data.description
+    )
 
     await db.add(category)
     await db.commit()
@@ -29,10 +30,10 @@ async def async_get_categories(db):
 
 
 def ranged(
-        file: IO[bytes],
-        start: int = 0,
-        end: int = None,
-        block_size: int = 8192,
+    file: IO[bytes],
+    start: int = 0,
+    end: int = None,
+    block_size: int = 8192,
 ) -> Generator[bytes, None, None]:
     consumed = 0
 
@@ -47,9 +48,8 @@ def ranged(
         consumed += data_length
         yield data
 
-    if hasattr(file, 'close'):
+    if hasattr(file, "close"):
         file.close()
-
 
 
 class CourseAPIRepository(BaseRepository):
@@ -62,15 +62,17 @@ class CourseAPIRepository(BaseRepository):
     async def get_or_create_tools(self, tool_list):
         tools_db = []
         for tool_title in tool_list:
-            query = await self.db.execute(select(CourseTool).filter_by(title=tool_title))
+            query = await self.db.execute(
+                select(CourseTool).filter_by(title=tool_title)
+            )
             tool = query.scalars().first()
             if tool is None:
-                tool = CourseTool(title = tool_title)
+                tool = CourseTool(title=tool_title)
                 self.db.add(tool)
                 await self.db.commit()
             tools_db.append(tool)
         return tools_db
-            
+
     async def get_category(self, category_title):
         query = select(Category).filter_by(title=category_title)
         result = await self.db.execute(query)
@@ -83,7 +85,7 @@ class CourseAPIRepository(BaseRepository):
         try:
             for col in course_in:
                 if col[1] is not None:
-                    
+
                     if col[0] is "category":
                         value = await self.get_category(col[1])
                         course.category = value
@@ -108,14 +110,18 @@ class CourseAPIRepository(BaseRepository):
         if course is None:
             raise HTTPException(status_code=404, detail="Course not found!")
         return course
-    
+
     async def async_create_course(self, course_data, current_user):
         try:
-            course = Course(title = course_data.title,
-                            description = course_data.description,
-                            difficult = course_data.difficult)
+            course = Course(
+                title=course_data.title,
+                description=course_data.description,
+                difficult=course_data.difficult,
+            )
 
-            category = await self.get_category(category_title=course_data.category_title)
+            category = await self.get_category(
+                category_title=course_data.category_title
+            )
 
             tools = await self.get_or_create_tools(tool_list=course_data.tools)
 
@@ -131,7 +137,9 @@ class CourseAPIRepository(BaseRepository):
             return result.scalars().first()
         except SQLAlchemyError as e:
             await self.db.rollback()
-            raise HTTPException(status_code=400, detail="Something wrong, please try again!")
+            raise HTTPException(
+                status_code=400, detail="Something wrong, please try again!"
+            )
 
     async def open_file(self, request, video):
         media_index = video.index(MEDIA_PATH)
@@ -140,41 +148,45 @@ class CourseAPIRepository(BaseRepository):
 
         file_stats = await aiofiles.os.stat(videoname)
         file_size = file_stats.st_size
-        
+
         content_length = file_size
         status_code = 200
 
         headers = {}
-        content_range = request.headers.get('range') # с какого байта грузить видео
+        content_range = request.headers.get("range")  # с какого байта грузить видео
 
         if content_range is not None:
             content_range = content_range.strip().lower()
             content_ranges = content_range.split("=")[-1]
-            range_start, range_end, *_ = map(str.strip, (content_ranges + '-').split('-'))
+            range_start, range_end, *_ = map(
+                str.strip, (content_ranges + "-").split("-")
+            )
 
             range_start = max(0, int(range_start)) if range_start else 0
-            range_end = min(file_size - 1, int(range_end)) if range_end else file_size-1
+            range_end = (
+                min(file_size - 1, int(range_end)) if range_end else file_size - 1
+            )
             content_length = (range_end - range_start) + 1
-            file = ranged(file, start=range_start, end=range_end+1)
+            file = ranged(file, start=range_start, end=range_end + 1)
             status_code = 206
-            headers['Content-Range'] = f'bytes {range_start}-{range_end}/{file_size}'
+            headers["Content-Range"] = f"bytes {range_start}-{range_end}/{file_size}"
 
         return file, status_code, content_length, headers
 
     async def async_favorite_course(self, course, user):
-        query = select(CourseFavorite).filter_by(course_id = course.id, user_id = user.id)
+        query = select(CourseFavorite).filter_by(course_id=course.id, user_id=user.id)
         result = await self.db.execute(query)
         course_favorite = result.scalars().first()
 
         detail = None
-        
+
         if course_favorite is not None:
             course_favorite.active = not course_favorite.active
-            
+
             detail = "Favorite changed!"
-        
+
         else:
-            course_favorite = CourseFavorite(course = course, user=user)
+            course_favorite = CourseFavorite(course=course, user=user)
 
             self.db.add(course_favorite)
             await self.db.commit()

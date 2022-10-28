@@ -15,11 +15,11 @@ import time
 JWT_SECRET = config("secret")
 JWT_ALGORITHM = config("algorithm")
 
-pwd_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def token_response(token: str) -> dict:
-    return{
+    return {
         "accessToken": token
         # refresh_token
     }
@@ -44,7 +44,7 @@ def sign_jwt(user: User) -> Dict[str, str]:
     payload = {
         "user_email": user.email,
         "expires": time.time() + 6000,
-        "user_account_type": user_account
+        "user_account_type": user_account,
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -53,13 +53,12 @@ def sign_jwt(user: User) -> Dict[str, str]:
 
 def check_permission(decoded_token, permission_type):
     # TODO: если заходит админ, а у раута пермишн стандарт, админ может заходить!
-    
-    permission_types = {
-        "standart": 1,
-        "premium": 2,
-        "admin": 3
-    }
-    if permission_types[decoded_token["user_account_type"]] < permission_types[permission_type]:
+
+    permission_types = {"standart": 1, "premium": 2, "admin": 3}
+    if (
+        permission_types[decoded_token["user_account_type"]]
+        < permission_types[permission_type]
+    ):
         print(permission_types[decoded_token["user_account_type"]])
         print(permission_types[permission_type])
         return False, "Permission denied!"
@@ -87,7 +86,9 @@ class JWTBearer(HTTPBearer):
         super(JWTBearer, self).__init__(auto_error=auto_error)
 
     async def __call__(self, request: Request):
-        credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
+        credentials: HTTPAuthorizationCredentials = await super(
+            JWTBearer, self
+        ).__call__(request)
         if credentials:
             if not credentials.scheme == "Bearer":
                 raise HTTPException(status_code=403, detail="Invalid auth scheme!")
