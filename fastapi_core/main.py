@@ -44,7 +44,7 @@ async def startup_event():
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
         
-        await load_fake_data(db = async_get_db)
+        await load_fake_data(db = next(async_get_db()))
 
 
 @app.on_event("shutdown")
