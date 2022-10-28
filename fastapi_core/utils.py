@@ -28,9 +28,7 @@ async def upload_file(path, filename, in_file):
 
 
 async def load_fake_data(db: AsyncSession):
-    
     # admin user
-
     admin = User(username="admin",
                 email="admin@inbox.ru",
                 hashed_password=hash_password("12345678"),
@@ -66,7 +64,7 @@ async def load_fake_data(db: AsyncSession):
         tool = CourseTool(title = tool_title)
 
         db.add(tool)
-        await db.commit
+        await db.commit()
         tools.append(tool)
 
     # categories
@@ -89,7 +87,7 @@ async def load_fake_data(db: AsyncSession):
                             description = category_tuple[1])
         
         db.add(category)
-        await db.commit(category)
+        await db.commit()
 
         categories.append(category)
 
@@ -110,23 +108,4 @@ async def load_fake_data(db: AsyncSession):
         )
 
         db.add(course)
-
-
-    # django_course = Course(
-    #         title="Django Курс",
-    #         description="Курс по Джанго",
-    #         difficult="medium",
-    #         category = categories[1],
-    #         tools = tools[3:6]
-    # )
-
-    # design_course = Course(
-    #         title="Design Курс",
-    #         description="Курс по дизайну",
-    #         difficult="hard",
-    #         category = categories[2],
-    #         tools = tools[6:]
-    # )
-        
-    # db.add_all([react_course, django_course, design_course])
         await db.commit()
