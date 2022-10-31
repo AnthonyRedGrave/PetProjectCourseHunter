@@ -44,7 +44,7 @@ class Category(Base):
     )
 
     # courses = relationship("Course", lazy='joined', backref=backref("category", uselist=False))
-    courses = relationship("Course", back_populates="category", uselist=True)
+    courses = relationship("Course", lazy="subquery", back_populates="category", uselist=True)
 
     def __repr__(self):
         return "<%s id=%s>" % (self.title, self.id)
@@ -105,7 +105,7 @@ class Course(Timestamp, Base):
     )
 
     course_lessons = relationship(
-        "Lesson", lazy="selectin", backref=backref("courses", uselist=True)
+        "Lesson", lazy="subquery", back_populates="course", uselist=True,
     )
 
     favorites = relationship(
@@ -133,6 +133,8 @@ class LessonTest(Base):
     lesson_id = Column(Integer, ForeignKey("lessons.id"))
     lesson = relationship("Lesson", back_populates="test")
 
+    questions = relationship("TestQuestion", back_populates="lesson_test", uselist=True)
+
 
 class LessonAttachment(Base):
     __tablename__ = "lesson_attachments"
@@ -146,12 +148,13 @@ class LessonAttachment(Base):
 
 
 class Lesson(Base):
+    DIFFICULTES = [("easy", "easy"), ("medium", "medium"), ("hard", "hard")]
     __tablename__ = "lessons"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(100), index=True, unique=True, nullable=False)
     description = Column(Text, nullable=False)
     lesson_time = Column(String(100), nullable=True)
-    difficult = Column(Integer)
+    difficult = Column(ChoiceType(DIFFICULTES))
 
     test = relationship("LessonTest", back_populates="lesson")
 
@@ -160,7 +163,37 @@ class Lesson(Base):
     )
 
     course_id = Column(Integer, ForeignKey("courses.id"))
-    course = relationship("Course", backref=backref("lessons", uselist=False))
+    course = relationship(
+        "Course", lazy="selectin", back_populates="course_lessons", uselist=False
+    )
+
+
+class TestQuestion(Base):
+    __tablename__ = "test_questions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(300), nullable=False)
+
+    description = Column(Text, nullable=False)
+
+    lesson_test_id = Column(Integer, ForeignKey("lesson_tests.id"))
+    lesson_test = relationship("LessonTest", lazy="selectin", back_populates="questions", uselist=False)
+
+    answers = relationship("TestAnswer", back_populates="question", uselist=True)
+
+
+class TestAnswer(Base):
+    __tablename__ = "test_answers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(300), nullable=False)
+
+    correct = Column(Boolean, default=False)
+
+    question_id = Column(Integer, ForeignKey("test_questions.id"))
+    question = relationship(
+        "TestQuestion", lazy="selectin", back_populates="answers", uselist=False
+    )
 
 
 class CourseFavorite(Base):

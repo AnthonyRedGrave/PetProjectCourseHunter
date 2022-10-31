@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.future import select
 import sqlalchemy.exc
 from sqlalchemy.exc import SQLAlchemyError
+from fastapi_core.courses.models import Lesson
 
 from fastapi_core.repositories import BaseRepository
 
@@ -29,6 +30,13 @@ async def async_get_categories(db):
     return result.scalars().all()
 
 
+async def async_get_category(category_id, db):
+    query = select(Category).filter_by(id=category_id)
+
+    result = await db.execute(query)
+    return result.scalars().first()
+
+
 def ranged(
     file: IO[bytes],
     start: int = 0,
@@ -53,9 +61,18 @@ def ranged(
 
 
 class CourseAPIRepository(BaseRepository):
+    async def get_query(self):
+        return select(Course).filter_by(draft=True)
+
     async def async_get_courses(self):
         query = select(Course).filter_by(draft=True)
 
+        result = await self.db.execute(query)
+        return result.scalars().all()
+
+    async def async_filter_courses(self, query, q_params):
+        for k, v in q_params.items():
+            query = query.filter(getattr(Course, k).like(v))
         result = await self.db.execute(query)
         return result.scalars().all()
 
@@ -72,6 +89,16 @@ class CourseAPIRepository(BaseRepository):
                 await self.db.commit()
             tools_db.append(tool)
         return tools_db
+
+    async def create_course_lesson(self, course, lesson_in):
+        course_lesson = Lesson(title=lesson_in.title,
+                                     description=lesson_in.description,
+                                     lesson_time = lesson_in.lesson_time,
+                                     difficult = lesson_in.difficult
+                                    )
+        course_lesson.course = course
+        self.db.add(course_lesson)
+        await self.db.commit()
 
     async def get_category(self, category_title):
         query = select(Category).filter_by(title=category_title)

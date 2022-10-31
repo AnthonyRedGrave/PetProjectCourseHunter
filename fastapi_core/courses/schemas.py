@@ -16,24 +16,70 @@ class LessonAttachment(BaseModel):
     file: str
 
 
-class CourseLesson(BaseModel):
-    id: int
-    title: str
-    description: str
-    lesson_time: str
-    difficult: int
-    attachments: List[LessonAttachment] = None
-
-    class Config:
-        orm_mode = True
-
-
 class Tool(BaseModel):
     id: int
     title: str
 
     class Config:
         orm_mode = True
+
+
+class CategoryCreate(BaseModel):
+    title: str
+    description: str
+
+
+class CourseCategory(BaseModel):
+    id: int
+    title: str
+    description: str
+    difficult: DifficultTypeChoices = DifficultTypeChoices.easy
+
+    rating: Optional[str] = None
+    study_hours: Optional[str] = None
+
+    preview: str
+
+    publisher__username: str = None
+
+    tools: List[Tool]
+
+    @validator("tools")
+    def get_tools_titles(cls, v, values):
+        return [tool.title for tool in v]
+
+    class Config:
+        orm_mode = True
+
+class Category(CategoryCreate):
+    id: int
+    logo: str
+
+    class Config:
+        orm_mode = True
+
+
+class CategoryDetail(Category):
+    courses: List[CourseCategory]
+
+
+class CourseLesson(BaseModel):
+    id: int
+    title: str
+    description: str
+    lesson_time: str
+    difficult: DifficultTypeChoices = DifficultTypeChoices.easy
+    # attachments: List[LessonAttachment] = None
+
+    class Config:
+        orm_mode = True
+
+
+class CourseLessonCreate(BaseModel):
+    title: str
+    description: str
+    lesson_time: str
+    difficult: DifficultTypeChoices = DifficultTypeChoices.easy
 
 
 class Publisher(BaseModel):
@@ -59,7 +105,7 @@ class Course(BaseModel):
 
     tools: List[Tool]
 
-    category_title: str = None
+    category: Category
 
     video: str = None
 
@@ -72,19 +118,6 @@ class Course(BaseModel):
     class Config:
         orm_mode = True
         allow_population_by_field_name = True
-
-
-class CategoryCreate(BaseModel):
-    title: str
-    description: str
-
-
-class Category(CategoryCreate):
-    id: int
-    logo: str
-
-    class Config:
-        orm_mode = True
 
 
 class CourseCreate(BaseModel):

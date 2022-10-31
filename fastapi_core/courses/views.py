@@ -15,10 +15,13 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import ValidationError
 
 from fastapi_core.courses.schemas import (
+    CategoryDetail,
     Course,
     CourseCreate,
     Category,
     CategoryCreate,
+    CourseLesson,
+    CourseLessonCreate,
     CourseUpdate,
     DifficultTypeChoices,
 )
@@ -26,6 +29,7 @@ from fastapi_core.courses.utils import (
     CourseAPIRepository,
     async_create_category,
     async_get_categories,
+    async_get_category,
 )
 
 from fastapi_core.users.security import JWTBearer
@@ -46,16 +50,21 @@ courses_router = APIRouter()
 
 @courses_router.get("/courses", response_model=list[Course])
 async def get_courses(
-    rating: str = None,
-    study_hours: str = None,
-    language: str = None,
-    price: str = None,
+    # rating: str = None,
+    # study_hours: str = None,
+    # language: str = None,
+    # price: str = None,
+    request: Request,
+    category: str = None,
+    title: str = None,
     course_repo=Depends(get_repository(CourseAPIRepository)),
 ) -> List[Course]:
-    # прикрутить фильтраицию к готовому апи курсов
-    # print(locals().copy())
-    courses = await course_repo.async_get_courses()
-    return courses
+
+    query = await course_repo.get_query()
+
+    q_params = dict(request.query_params)
+
+    return await course_repo.async_filter_courses(query, q_params)
 
 
 @courses_router.post("/courses", response_model=Course)
@@ -100,10 +109,14 @@ async def patch_course(
 async def upload_course_video(
     course_id: int,
     video: Optional[UploadFile] = File(...),
+    current_user=Depends(get_current_user),
     course_repo=Depends(get_repository(CourseAPIRepository)),
 ):
 
     course = await course_repo.async_get_course(course_id=course_id)
+
+    if course.publisher != current_user:
+        return course
 
     path = f"{MEDIA_PATH}/courses/{course_id}"
     out_video_name = await upload_file(
@@ -118,10 +131,14 @@ async def upload_course_video(
 async def upload_course_logo(
     course_id: int,
     file: Optional[UploadFile] = File(...),
+    current_user=Depends(get_current_user),
     course_repo=Depends(get_repository(CourseAPIRepository)),
 ):
 
     course = await course_repo.async_get_course(course_id=course_id)
+
+    if course.publisher != current_user:
+        return course
 
     path = f"{MEDIA_PATH}/courses/{course_id}"
     out_file_name = await upload_file(path=path, filename=file.filename, in_file=file)
@@ -151,9 +168,42 @@ async def get_course_video(
     return response
 
 
+@courses_router.get("/courses/{course_id}/lessons", response_model=Course)
+async def get_course_lessons(
+    course_id: int,
+    course_repo = Depends(get_repository(CourseAPIRepository))
+):
+    course = await course_repo.async_get_course(course_id = course_id)
+
+    print(course.course_lessons)
+
+    return course
+
+@courses_router.post("/courses/{course_id}/lessons", response_model=Course)
+async def post_course_lesson(
+    course_id: int,
+    lesson_in: CourseLessonCreate,
+    course_repo=Depends(get_repository(CourseAPIRepository)),
+):
+    course = await course_repo.async_get_course(course_id = course_id)
+
+    await course_repo.create_course_lesson(course = course, lesson_in=lesson_in)
+
+    return course
+
+
+
+
 @courses_router.get("/categories", response_model=List[Category])
 async def get_categories(db: AsyncSession = Depends(async_get_db)):
     return await async_get_categories(db=db)
+
+
+@courses_router.get("/categories/{category_id}", response_model=CategoryDetail)
+async def get_category(category_id: int, db: AsyncSession = Depends(async_get_db)):
+    category = await async_get_category(category_id=category_id, db=db)
+    return category
+
 
 
 @courses_router.post(

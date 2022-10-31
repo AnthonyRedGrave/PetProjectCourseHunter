@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
 from fastapi_core.users.views import users_router
@@ -8,13 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_core.db import async_get_db, engine
 from fastapi_core.base import Base
 from fastapi_core.settings import MEDIA_PATH
-from fastapi_core.utils import load_fake_data
-from sqlalchemy.ext.asyncio.session import AsyncSession
+from fastapi_core.repositories import get_repository
+from fastapi_core.utils import FakeAPIRepository
 
-
-
-# script_dir = os.path.dirname(__file__)
-# st_abs_file_path = os.path.join(script_dir, "media/")
 
 origins = ["*"]
 
@@ -43,10 +39,9 @@ app = get_application()
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        # await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
         
-
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -55,6 +50,7 @@ async def shutdown_event():
 
 
 @app.get("/")
-async def main(db: AsyncSession = Depends(async_get_db)):
-    await load_fake_data(db)
+async def main(request: Request, fakeApiRepo = Depends(get_repository(FakeAPIRepository))):
+    print(request.client.host)
+    await fakeApiRepo.load_data()
     return {"detail": "HELLO"}
