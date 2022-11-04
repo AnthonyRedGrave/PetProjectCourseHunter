@@ -5,14 +5,12 @@ from sqlalchemy import select
 
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from fastapi import Depends
-
-from fastapi_core.db import async_get_db
 from fastapi_core.repositories import BaseRepository
 
 from fastapi_core.users.models import User, Account
 from fastapi_core.courses.models import Course, Category, CourseTool
 from fastapi_core.users.security import hash_password
+from fastapi_core.settings import HOST_NAME
 
 
 class FakeAPIRepository(BaseRepository):
@@ -26,9 +24,10 @@ class FakeAPIRepository(BaseRepository):
                 email="admin@inbox.ru",
                 hashed_password=hash_password("12345678"),
                 firstname="admin_firstname",
-                lastname="admin_lastname"
+                lastname="admin_lastname",
+                image = f"{HOST_NAME}default/sasha_admin.jpg"
             )
-            
+        
         db_admin_account = Account(type="admin", user_id=admin.id)
         db_admin_account.user = admin
         self.db.add_all([admin, db_admin_account])
@@ -41,7 +40,8 @@ class FakeAPIRepository(BaseRepository):
                 email="sasha@inbox.ru",
                 hashed_password=hash_password("12345678"),
                 firstname="Александр",
-                lastname="Трубочкин"
+                lastname="Трубочкин",
+                image = f"{HOST_NAME}default/sasha_user.jpg"
             )
             
         db_user_account = Account(type="standart", user_id=user.id)
@@ -66,15 +66,17 @@ class FakeAPIRepository(BaseRepository):
                         'то JavaScript открывает огромный мир для разработчика с кучей фреймворков вроде Angular, React, Vue и других. Javascript - один из самых востребованых навыков сегодня'\
                         'в веб-разработке, рекомендуем внимательно ознакомится с ним перед тем, как приступать к изучению фреймворков, или на худой конец глятьте в сторону jquery, который как бы'\
                         'не хоронили продвинутые разработчики, все же остается подходящим для использование в большинстве проектов. Также Frontend разработчик может работать с различными популярными'\
-                        'cms, вроде Wordpress, Joomla, Opencart.'),
+                        'cms, вроде Wordpress, Joomla, Opencart.',
+                        f"{HOST_NAME}default/frontend_category.jpg"),
 
                         ('Backend', 'Backend отвечает за серверную сторону веб-сайта / приложения. Тут, как и в фронт-енде, также есть куда развернутся. Самым популярным языком бек-енда уже много лет'\
-                        'является PHP, несмотря на скептицизм продвинутых программистов, которые хоронят его чуть не каждый год.'), 
+                        'является PHP, несмотря на скептицизм продвинутых программистов, которые хоронят его чуть не каждый год.', f"{HOST_NAME}default/backend_category.jpg"), 
 
-                        ('Graphic', 'Работа с графикой. Adobe Photoshop, Lightroom, Illustrator, а также UX/UI дизайн.')]:
+                        ('Graphic', 'Работа с графикой. Adobe Photoshop, Lightroom, Illustrator, а также UX/UI дизайн.', f"{HOST_NAME}default/design_category.jpg")]:
 
             category = Category(title = category_tuple[0],
-                                description = category_tuple[1])
+                                description = category_tuple[1],
+                                logo = category_tuple[2])
             
             self.db.add(category)
             await self.db.commit()
@@ -82,9 +84,9 @@ class FakeAPIRepository(BaseRepository):
             FakeAPIRepository.categories.append(category)
 
     async def create_courses(self):
-        courses_info = [("React Курс", "Курс по реакту", "easy", 0, (0, 3)), 
-                    ("Django Курс", "Курс по Джанго", "medium", 1, (3, 6)), 
-                    ("Design Курс", "Курс по дизайну", "hard", 2, (6, -1))]
+        courses_info = [("React Курс", "Курс по реакту", "easy", 0, (0, 3), f"{HOST_NAME}default/1_course.jpg"), 
+                    ("Django Курс", "Курс по Джанго", "medium", 1, (3, 6), f"{HOST_NAME}default/2_course.jpg"), 
+                    ("Design Курс", "Курс по дизайну", "hard", 2, (6, -1), f"{HOST_NAME}default/3_course.jpg")]
 
         for course_info in courses_info:
             
@@ -93,7 +95,9 @@ class FakeAPIRepository(BaseRepository):
                     description=course_info[1],
                     difficult=course_info[2],
                     category = FakeAPIRepository.categories[course_info[3]],
-                    tools = FakeAPIRepository.tools[course_info[4][0]:course_info[4][1]]
+                    tools = FakeAPIRepository.tools[course_info[4][0]:course_info[4][1]],
+                    preview = course_info[5],
+                    language = "russian"
             )
 
             course.publisher = FakeAPIRepository.user

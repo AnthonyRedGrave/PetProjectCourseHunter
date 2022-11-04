@@ -42,8 +42,6 @@ class Category(Base):
     logo = Column(
         String(300), default=f"{HOST_NAME}categories/default_category_logo.png"
     )
-
-    # courses = relationship("Course", lazy='joined', backref=backref("category", uselist=False))
     courses = relationship("Course", lazy="subquery", back_populates="category", uselist=True)
 
     def __repr__(self):
@@ -68,6 +66,7 @@ class CourseTool(Base):
 
 class Course(Timestamp, Base):
     DIFFICULTES = [("easy", "easy"), ("medium", "medium"), ("hard", "hard")]
+    LANGUAGES = [("english", "english"), ("russian", "russian")]
     __tablename__ = "courses"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -76,6 +75,8 @@ class Course(Timestamp, Base):
     difficult = Column(ChoiceType(DIFFICULTES))
 
     preview = Column(String(300), default=f"{HOST_NAME}courses/logo_default.png")
+
+    language = Column(ChoiceType(LANGUAGES))
 
     video = Column(String(300))
 
@@ -92,10 +93,9 @@ class Course(Timestamp, Base):
         target_collection="publisher", attr="username"
     )
 
-    rating = Column(Integer, index=True, nullable=True)
+    rating = Column(Integer, index=True, default=0)
     study_hours = Column(String(100), nullable=True)
 
-    # tools = relationship("CourseTool", backref=backref("tools", uselist=True))
     tools = relationship(
         "CourseTool",
         lazy="subquery",
@@ -105,11 +105,15 @@ class Course(Timestamp, Base):
     )
 
     course_lessons = relationship(
-        "Lesson", lazy="subquery", back_populates="course", uselist=True,
+        "Lesson", lazy="subquery", back_populates="course", uselist=True, order_by=lambda: Lesson.id,
     )
 
     favorites = relationship(
         "CourseFavorite", back_populates="course", lazy="subquery", uselist=True
+    )
+
+    ratings = relationship(
+        "CourseRating", back_populates="course", lazy='subquery', uselist=True
     )
 
     category_id = Column(Integer, ForeignKey("categories.id"))
@@ -120,6 +124,21 @@ class Course(Timestamp, Base):
     category_title = association_proxy(target_collection="category", attr="title")
 
     draft = Column(Boolean, default=True)
+
+    @hybrid_property
+    def count_lessons(self):
+        return len(self.course_lessons)
+
+
+    @hybrid_property
+    def rated(self):
+        rated_dict = {'like': 0, 'dislike': 0}
+        likes = [rate.status for rate in self.ratings if int(rate.status.value) > 0]
+        rated_dict['like'] = len(likes)
+        dislikes = [rate.status for rate in self.ratings if int(rate.status.value) < 0]
+        rated_dict['dislike'] = len(dislikes)
+        return rated_dict
+    
 
     def __repr__(self):
         return "<%s id=%s>" % (self.title, self.id)
@@ -167,6 +186,11 @@ class Lesson(Base):
         "Course", lazy="selectin", back_populates="course_lessons", uselist=False
     )
 
+    video = Column(String(300))
+
+    def __repr__(self):
+        return "<Lesson object %s id=%s>" % (self.title, self.id)
+
 
 class TestQuestion(Base):
     __tablename__ = "test_questions"
@@ -194,6 +218,29 @@ class TestAnswer(Base):
     question = relationship(
         "TestQuestion", lazy="selectin", back_populates="answers", uselist=False
     )
+
+
+class CourseRating(Base):
+    RATINGS_STATUSES = [
+        ("1", "1"),
+        ("-1", "-1")
+    ]
+    __tablename__ = "course_ratings"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    course_id = Column(Integer, ForeignKey("courses.id"))
+    course = relationship(
+        "Course", back_populates="ratings", uselist=False
+    )
+
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship(
+        "User", back_populates="ratings", uselist=False
+    )
+
+    status = Column(ChoiceType(choices=RATINGS_STATUSES))
+
 
 
 class CourseFavorite(Base):

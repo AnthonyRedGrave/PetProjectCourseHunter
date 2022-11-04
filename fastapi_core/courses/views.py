@@ -2,17 +2,11 @@ from fastapi import (
     APIRouter,
     Depends,
     File,
-    Form,
-    HTTPException,
     Request,
     UploadFile,
-    Body,
-    status,
+
 )
 from fastapi.responses import StreamingResponse
-from fastapi.encoders import jsonable_encoder
-
-from pydantic import ValidationError
 
 from fastapi_core.courses.schemas import (
     CategoryDetail,
@@ -20,10 +14,12 @@ from fastapi_core.courses.schemas import (
     CourseCreate,
     Category,
     CategoryCreate,
+    CourseDetail,
+    CourseFilter,
     CourseLesson,
     CourseLessonCreate,
+    CourseRate,
     CourseUpdate,
-    DifficultTypeChoices,
 )
 from fastapi_core.courses.utils import (
     CourseAPIRepository,
@@ -42,7 +38,7 @@ from fastapi_core.utils import upload_file
 
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from typing import List, Optional, Union
+from typing import List, Optional
 
 
 courses_router = APIRouter()
@@ -50,19 +46,17 @@ courses_router = APIRouter()
 
 @courses_router.get("/courses", response_model=list[Course])
 async def get_courses(
-    # rating: str = None,
-    # study_hours: str = None,
-    # language: str = None,
-    # price: str = None,
-    request: Request,
-    category: str = None,
-    title: str = None,
+    filters: CourseFilter = Depends(),
+    page: int = 0,
+    limit: int = 50,
     course_repo=Depends(get_repository(CourseAPIRepository)),
 ) -> List[Course]:
 
     query = await course_repo.get_query()
 
-    q_params = dict(request.query_params)
+    query = query.offset(page).limit(limit)
+
+    q_params = dict(filters)
 
     return await course_repo.async_filter_courses(query, q_params)
 
@@ -79,15 +73,16 @@ async def post_course(
     return course
 
 
-@courses_router.get("/courses/{course_id}/", response_model=Course)
+@courses_router.get("/courses/{course_id}/", response_model=CourseDetail)
 async def get_course(
     course_id: int, course_repo=Depends(get_repository(CourseAPIRepository))
 ) -> Course:
     course = await course_repo.async_get_course(course_id=course_id)
+    print(course.course_lessons)
     return course
 
 
-@courses_router.patch("/courses/{course_id}/", response_model=Course)
+@courses_router.patch("/courses/{course_id}/", response_model=CourseDetail)
 async def patch_course(
     course_id: int,
     course_in: Optional[CourseUpdate],
@@ -105,7 +100,7 @@ async def patch_course(
     return course
 
 
-@courses_router.patch("/courses/{course_id}/upload_video", response_model=Course)
+@courses_router.patch("/courses/{course_id}/upload_video", response_model=CourseDetail)
 async def upload_course_video(
     course_id: int,
     video: Optional[UploadFile] = File(...),
@@ -127,7 +122,7 @@ async def upload_course_video(
     return course
 
 
-@courses_router.patch("/courses/{course_id}/upload_logo", response_model=Course)
+@courses_router.patch("/courses/{course_id}/upload_logo", response_model=CourseDetail)
 async def upload_course_logo(
     course_id: int,
     file: Optional[UploadFile] = File(...),
@@ -168,18 +163,16 @@ async def get_course_video(
     return response
 
 
-@courses_router.get("/courses/{course_id}/lessons", response_model=Course)
+@courses_router.get("/courses/{course_id}/lessons", response_model=CourseDetail)
 async def get_course_lessons(
     course_id: int,
     course_repo = Depends(get_repository(CourseAPIRepository))
 ):
     course = await course_repo.async_get_course(course_id = course_id)
 
-    print(course.course_lessons)
-
     return course
 
-@courses_router.post("/courses/{course_id}/lessons", response_model=Course)
+@courses_router.post("/courses/{course_id}/lessons", response_model=CourseDetail)
 async def post_course_lesson(
     course_id: int,
     lesson_in: CourseLessonCreate,
@@ -192,6 +185,47 @@ async def post_course_lesson(
     return course
 
 
+@courses_router.get("/lessons/{lesson_id}/video/")
+async def get_lesson_video(
+    lesson_id: int,
+    request: Request,
+    course_repo=Depends(get_repository(CourseAPIRepository)),
+):
+    lesson = await course_repo.async_get_lesson(lesson_id=lesson_id)
+
+    file, status_code, content_length, headers = await course_repo.open_file(
+        request, lesson.video
+    )
+
+    response = StreamingResponse(file, media_type="video/mp4", status_code=status_code)
+
+    response.headers.update(
+        {"Accept-Ranges": "bytes", "Content-Length": str(content_length), **headers}
+    )
+
+    return response
+
+
+@courses_router.patch("/lessons/{lesson_id}/upload_video", response_model=CourseLesson)
+async def upload_course_video(
+    lesson_id: int,
+    video: Optional[UploadFile] = File(...),
+    current_user=Depends(get_current_user),
+    course_repo=Depends(get_repository(CourseAPIRepository)),
+):
+
+    lesson = await course_repo.async_get_lesson(lesson_id=lesson_id)
+
+    if lesson.course.publisher != current_user:
+        return lesson
+
+    path = f"{MEDIA_PATH}/lessons/{lesson_id}"
+    out_video_name = await upload_file(
+        path=path, filename=video.filename, in_file=video
+    )
+    lesson.video = f"{HOST_NAME}lessons/{lesson_id}/{out_video_name}"
+
+    return lesson
 
 
 @courses_router.get("/categories", response_model=List[Category])
@@ -203,7 +237,6 @@ async def get_categories(db: AsyncSession = Depends(async_get_db)):
 async def get_category(category_id: int, db: AsyncSession = Depends(async_get_db)):
     category = await async_get_category(category_id=category_id, db=db)
     return category
-
 
 
 @courses_router.post(
@@ -227,6 +260,22 @@ async def favorite_course(
     course = await course_repo.async_get_course(course_id=course_id)
 
     detail = await course_repo.async_favorite_course(course=course, user=current_user)
+
+    return detail
+
+
+@courses_router.post(
+    "/courses/{course_id}/rate/"
+)
+async def rate_course(
+    course_id: int,
+    rate: CourseRate,
+    current_user = Depends(get_current_user),
+    course_repo = Depends(get_repository(CourseAPIRepository))
+):
+    course = await course_repo.async_get_course(course_id = course_id)
+
+    detail = await course_repo.async_rate_course(course=course, user=current_user, rate=rate)
 
     return detail
 

@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.future import select
 import sqlalchemy.exc
 from sqlalchemy.exc import SQLAlchemyError
-from fastapi_core.courses.models import Lesson
+from fastapi_core.courses.models import CourseRating, Lesson
 
 from fastapi_core.repositories import BaseRepository
 
@@ -62,7 +62,7 @@ def ranged(
 
 class CourseAPIRepository(BaseRepository):
     async def get_query(self):
-        return select(Course).filter_by(draft=True)
+        return select(Course).filter_by(draft=True).order_by(Course.id)
 
     async def async_get_courses(self):
         query = select(Course).filter_by(draft=True)
@@ -71,8 +71,17 @@ class CourseAPIRepository(BaseRepository):
         return result.scalars().all()
 
     async def async_filter_courses(self, query, q_params):
+
+        req_cont_params = ('category_title', 'title')
+
         for k, v in q_params.items():
-            query = query.filter(getattr(Course, k).like(v))
+            if v is not None:
+                
+                if k in req_cont_params:
+                    query = query.filter(getattr(Course, k).contains(v))
+                    continue
+
+                query = query.filter(getattr(Course, k).like(v))
         result = await self.db.execute(query)
         return result.scalars().all()
 
@@ -130,6 +139,14 @@ class CourseAPIRepository(BaseRepository):
             await self.db.rollback()
             raise HTTPException(status_code=400, detail="Duplicated values!")
 
+    async def async_get_lesson(self, lesson_id):
+        query = select(Lesson).filter_by(id=lesson_id)
+        result = await self.db.execute(query)
+        lesson = result.scalars().first()
+        if lesson is None:
+            raise HTTPException(status_code=404, detail="Course lesson not found!")
+        return lesson
+
     async def async_get_course(self, course_id):
         query = select(Course).filter_by(id=course_id)
         result = await self.db.execute(query)
@@ -144,6 +161,7 @@ class CourseAPIRepository(BaseRepository):
                 title=course_data.title,
                 description=course_data.description,
                 difficult=course_data.difficult,
+                language = course_data.language
             )
 
             category = await self.get_category(
@@ -220,6 +238,33 @@ class CourseAPIRepository(BaseRepository):
 
             detail = "Favorite created!"
 
+        return detail
+
+
+    async def async_rate_course(self, course, user, rate):
+        query = select(CourseRating).filter_by(course_id = course.id, user_id =user.id)
+
+        result = await self.db.execute(query)
+        course_rating = result.scalars().first()
+
+        detail = None
+        if course_rating is not None:
+            if course_rating.status == rate.status:
+                raise HTTPException(status_code=400, detail="You can't rate course by same value!")
+            course_rating.status = str(int(course_rating.status.value)*-1)
+
+            detail = "Rating changed!"
+        else:
+            course_rating = CourseRating(course=course, user=user, status=rate.status.value)
+
+            self.db.add(course_rating)
+
+            detail = "Rating created!"
+
+        course.rating += int(course_rating.status)
+
+        await self.db.commit()
+        
         return detail
 
     async def async_get_favorites(self, user):

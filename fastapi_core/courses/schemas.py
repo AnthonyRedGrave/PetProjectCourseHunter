@@ -1,3 +1,4 @@
+from datetime import datetime
 from ormar import Boolean
 from pydantic import BaseModel, Field, validator
 from enum import Enum
@@ -5,10 +6,34 @@ from enum import Enum
 from typing import List, Optional
 
 
+class RatingTypeChoices(str, Enum):
+    incr = "1"
+    decr = "-1"
+
+
+class LanguageTypeChoices(str, Enum):
+    english = "english"
+    russian = "russian"
+
+
 class DifficultTypeChoices(str, Enum):
     easy = "easy"
     medium = "medium"
     hard = "hard"
+
+
+class CourseRate(BaseModel):
+    status: RatingTypeChoices
+
+
+class CourseFilter(BaseModel):
+    category_title: Optional[str] = None
+    title: Optional[str] = None
+    language: Optional[LanguageTypeChoices] = None
+
+    # length: Optional[str] = None
+    # rating: Optional[str] = None
+    # price: Optional[str] = None
 
 
 class LessonAttachment(BaseModel):
@@ -29,28 +54,6 @@ class CategoryCreate(BaseModel):
     description: str
 
 
-class CourseCategory(BaseModel):
-    id: int
-    title: str
-    description: str
-    difficult: DifficultTypeChoices = DifficultTypeChoices.easy
-
-    rating: Optional[str] = None
-    study_hours: Optional[str] = None
-
-    preview: str
-
-    publisher__username: str = None
-
-    tools: List[Tool]
-
-    @validator("tools")
-    def get_tools_titles(cls, v, values):
-        return [tool.title for tool in v]
-
-    class Config:
-        orm_mode = True
-
 class Category(CategoryCreate):
     id: int
     logo: str
@@ -59,8 +62,34 @@ class Category(CategoryCreate):
         orm_mode = True
 
 
-class CategoryDetail(Category):
-    courses: List[CourseCategory]
+class CourseBase(BaseModel):
+    id: int
+    title: str
+    description: str
+    difficult: DifficultTypeChoices = DifficultTypeChoices.easy
+    language: LanguageTypeChoices = LanguageTypeChoices.russian
+    rating: Optional[str] = None
+    study_hours: Optional[str] = None
+    publisher__username: str = None
+    category: Category
+    tools: List[Tool]
+
+    rated: dict
+
+    count_lessons: int
+
+    created_at: datetime
+
+    @validator("created_at")
+    def parse_created_at(cls, v, values):
+        return v.date().strftime("%d/%m/%Y")
+
+    @validator("tools")
+    def get_tools_titles(cls, v, values):
+        return [tool.title for tool in v]
+
+    class Config:
+        orm_mode = True
 
 
 class CourseLesson(BaseModel):
@@ -69,10 +98,28 @@ class CourseLesson(BaseModel):
     description: str
     lesson_time: str
     difficult: DifficultTypeChoices = DifficultTypeChoices.easy
+    video: str = None
     # attachments: List[LessonAttachment] = None
 
     class Config:
         orm_mode = True
+
+
+class CourseDetail(CourseBase):
+    video: str = None
+    course_lessons: List[CourseLesson]
+
+
+class Course(CourseBase):
+    pass
+
+
+class CourseCategory(Course):
+    pass
+
+
+class CategoryDetail(Category):
+    courses: List[CourseCategory]
 
 
 class CourseLessonCreate(BaseModel):
@@ -90,41 +137,12 @@ class Publisher(BaseModel):
     lastname: str
 
 
-class Course(BaseModel):
-    id: int
-    title: str
-    description: str
-    difficult: DifficultTypeChoices = DifficultTypeChoices.easy
-
-    rating: Optional[str] = None
-    study_hours: Optional[str] = None
-
-    preview: str
-
-    publisher__username: str = None
-
-    tools: List[Tool]
-
-    category: Category
-
-    video: str = None
-
-    course_lessons: List[CourseLesson]
-
-    @validator("tools")
-    def get_tools_titles(cls, v, values):
-        return [tool.title for tool in v]
-
-    class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
-
-
 class CourseCreate(BaseModel):
     title: str
     description: str
 
     difficult: DifficultTypeChoices = DifficultTypeChoices.easy
+    language: LanguageTypeChoices = LanguageTypeChoices.russian
 
     tools: List[str]
 
