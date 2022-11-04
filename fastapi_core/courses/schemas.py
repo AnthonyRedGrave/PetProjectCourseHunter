@@ -73,6 +73,7 @@ class CourseBase(BaseModel):
     publisher__username: str = None
     category: Category
     tools: List[Tool]
+    preview: str
 
     rated: dict
 
